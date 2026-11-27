@@ -13,6 +13,7 @@ from catalog import (
     get_all_genres,
     get_all_moods,
     get_movie_by_id,
+    get_sources,
     is_allowed_archive_url,
     recommend_movies,
 )
@@ -138,6 +139,22 @@ def create_app() -> Flask:
                 "movies": recs,
             }
         )
+
+    @flask_app.get("/sources")
+    def sources_page():
+        kind = (request.args.get("kind") or "").strip() or None
+        return render_template(
+            "sources.html",
+            sources=get_sources(kind=kind),
+            all_sources_count=len(get_sources()),
+            selected_kind=kind or "",
+        )
+
+    @flask_app.get("/api/sources")
+    def api_sources():
+        kind = (request.args.get("kind") or "").strip() or None
+        items = get_sources(kind=kind)
+        return jsonify({"count": len(items), "sources": items})
 
     @flask_app.errorhandler(404)
     def not_found(_error):
