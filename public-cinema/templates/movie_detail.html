@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}{{ movie.title }} ({{ movie.year }}) — Public Cinema{% endblock %}
+
+{% block content %}
+<a class="breadcrumb" href="{{ url_for('index') }}">&larr; Back to Catalog</a>
+
+<section class="detail-layout">
+  <div class="player-card">
+    <video
+      class="video-player"
+      controls
+      preload="metadata"
+      poster="{{ movie.poster_url }}"
+    >
+      <source src="{{ movie.download_url }}" type="video/mp4">
+      Your browser does not support HTML5 video playback.
+      <a href="{{ url_for('download_movie', movie_id=movie.id) }}">Download the MP4 directly</a>.
+    </video>
+  </div>
+
+  <aside class="detail-panel">
+    <h1 class="detail-title">{{ movie.title }}</h1>
+
+    <div class="detail-meta">
+      <span class="pill">{{ movie.year }}</span>
+      <span class="pill">{{ movie.runtime_min }} min</span>
+      <span class="pill pill-license">{{ movie.license }}</span>
+    </div>
+
+    <p class="detail-synopsis">{{ movie.synopsis }}</p>
+
+    <dl class="meta-list">
+      <div class="meta-row">
+        <dt class="meta-label">Director</dt>
+        <dd class="meta-value">{{ movie.director }}</dd>
+      </div>
+      <div class="meta-row">
+        <dt class="meta-label">Era</dt>
+        <dd class="meta-value">{{ movie.era }}</dd>
+      </div>
+      <div class="meta-row">
+        <dt class="meta-label">Genres</dt>
+        <dd class="meta-value">{{ movie.genres | join(", ") }}</dd>
+      </div>
+      <div class="meta-row">
+        <dt class="meta-label">Moods</dt>
+        <dd class="meta-value">{{ movie.moods | join(", ") }}</dd>
+      </div>
+      <div class="meta-row">
+        <dt class="meta-label">Archive Source</dt>
+        <dd class="meta-value">
+          <a href="{{ movie.archive_url }}" target="_blank" rel="noopener noreferrer">
+            archive.org/details/{{ movie.archive_id }}
+          </a>
+        </dd>
+      </div>
+    </dl>
+
+    <div class="detail-actions">
+      <a class="btn btn-primary" href="{{ url_for('download_movie', movie_id=movie.id) }}">
+        Download MP4
+      </a>
+      <button type="button" class="btn btn-secondary" id="copy-link-btn">
+        Copy Link
+      </button>
+    </div>
+  </aside>
+</section>
+
+{% if similar_movies %}
+<section aria-labelledby="similar-heading">
+  <h2 id="similar-heading" class="section-heading">Similar Movies</h2>
+  <div class="movie-grid">
+    {% for item in similar_movies %}
+      <article class="movie-card" data-movie-id="{{ item.id }}">
+        <a class="poster-wrap" href="{{ url_for('movie_detail', movie_id=item.id) }}">
+          <img
+            class="poster-img"
+            src="{{ item.poster_url }}"
+            alt="{{ item.title }} ({{ item.year }}) poster"
+            loading="lazy"
+            onerror="this.style.display='none'"
+          >
+          <div class="poster-overlay">
+            <span class="pill">{{ item.year }} &bull; {{ item.runtime_min }} min</span>
+            <span class="pill pill-license">{{ item.license }}</span>
+          </div>
+        </a>
+
+        <div class="card-body">
+          <h3 class="card-title">
+            <a href="{{ url_for('movie_detail', movie_id=item.id) }}">{{ item.title }}</a>
+          </h3>
+          <p class="card-director">Directed by {{ item.director }}</p>
+          <div class="tag-row">
+            {% for genre in item.genres %}
+              <span class="tag">{{ genre }}</span>
+            {% endfor %}
+          </div>
+          <div class="card-actions">
+            <a class="btn btn-secondary btn-sm" href="{{ url_for('movie_detail', movie_id=item.id) }}">Details</a>
+            <a class="btn btn-primary btn-sm" href="{{ url_for('download_movie', movie_id=item.id) }}">Download MP4</a>
+          </div>
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,120 @@
+{% extends "changelog/base.html" %}
+
+{% block title %}Release Radar — Product Changelogs &amp; Roadmap{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <div class="hero-text">
+        <p class="eyebrow">Product Changelog &amp; Feature Portal</p>
+        <h1>Track every release, breaking change, and community request.</h1>
+        <p class="hero-subtitle">
+            Browse versioned changelogs across our developer tools, filter updates by category, and upvote what ships next.
+        </p>
+    </div>
+    <div class="stats-grid" aria-label="Portal summary">
+        <div class="stat-card">
+            <span class="stat-value">{{ total_projects }}</span>
+            <span class="stat-label">Products</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-value">{{ total_releases }}</span>
+            <span class="stat-label">Releases</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-value">{{ total_features }}</span>
+            <span class="stat-label">Feature Requests</span>
+        </div>
+    </div>
+</section>
+
+<section class="search-bar-section">
+    <form method="get" action="{% url 'changelog:project_list' %}" class="search-form">
+        <input
+            type="search"
+            name="q"
+            value="{{ query }}"
+            placeholder="Search products or release notes (e.g., Parquet, rate limiter, v2.0)..."
+            aria-label="Search products or release notes"
+            class="search-input"
+        >
+        <button type="submit" class="btn btn-primary">Search</button>
+        {% if query %}
+            <a href="{% url 'changelog:project_list' %}" class="btn btn-ghost">Clear</a>
+        {% endif %}
+    </form>
+</section>
+
+<section class="section">
+    <div class="section-header">
+        <h2>Products</h2>
+        <span class="muted">{{ projects|length }} tracked</span>
+    </div>
+
+    {% if projects %}
+        <div class="project-grid">
+            {% for project in projects %}
+                <article class="card project-card">
+                    <div class="project-card-top">
+                        <h3>
+                            <a href="{{ project.get_absolute_url }}">{{ project.name }}</a>
+                        </h3>
+                        {% with latest=project.releases.first %}
+                            {% if latest %}
+                                <span class="version-pill">{{ latest.version }}</span>
+                            {% endif %}
+                        {% endwith %}
+                    </div>
+                    <p class="project-desc">{{ project.description }}</p>
+                    <div class="project-meta">
+                        <span>{{ project.release_count }} release{{ project.release_count|pluralize }}</span>
+                        <span>&middot;</span>
+                        <span>{{ project.feature_count }} request{{ project.feature_count|pluralize }}</span>
+                    </div>
+                    <div class="project-card-actions">
+                        <a href="{{ project.get_absolute_url }}" class="btn btn-secondary">View Changelog &rarr;</a>
+                        <a href="{% url 'changelog:api_project_releases' project.slug %}" class="api-link">JSON API</a>
+                    </div>
+                </article>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <p>No products matched your search.</p>
+        </div>
+    {% endif %}
+</section>
+
+<section class="section">
+    <div class="section-header">
+        <h2>Recent Releases</h2>
+        <span class="muted">Latest updates across all products</span>
+    </div>
+
+    {% if recent_releases %}
+        <div class="feed-list">
+            {% for release in recent_releases %}
+                <article class="card feed-item">
+                    <div class="feed-item-header">
+                        <div class="feed-badges">
+                            <span class="badge badge-{{ release.category|lower }}">{{ release.category }}</span>
+                            <span class="version-pill">{{ release.version }}</span>
+                            <a href="{{ release.project.get_absolute_url }}" class="project-tag">{{ release.project.name }}</a>
+                        </div>
+                        <time datetime="{{ release.published_at|date:'c' }}" class="muted">
+                            {{ release.published_at|date:"M j, Y" }}
+                        </time>
+                    </div>
+                    <h3 class="feed-title">
+                        <a href="{{ release.project.get_absolute_url }}">{{ release.title }}</a>
+                    </h3>
+                    <p class="feed-summary">{{ release.summary }}</p>
+                </article>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <p>No releases found{% if query %} for "{{ query }}"{% endif %}.</p>
+        </div>
+    {% endif %}
+</section>
+{% endblock %}

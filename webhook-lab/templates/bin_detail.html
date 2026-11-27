@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+
+{% block title %}{{ bin.name }} — Webhook Lab{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+  <a href="{{ url_for('index') }}">&larr; All Bins</a>
+</div>
+
+<section class="bin-header card">
+  <div class="bin-header-top">
+    <div>
+      <div class="title-row">
+        <h1>{{ bin.name }}</h1>
+        <span class="status-pill">Default {{ bin.default_status_code }}</span>
+      </div>
+      {% if bin.description %}
+        <p class="subtitle">{{ bin.description }}</p>
+      {% endif %}
+    </div>
+    <div class="header-actions">
+      <a href="{{ url_for('api_export_requests', bin_id=bin.id) }}" class="btn btn-secondary btn-sm">Export JSON</a>
+      <form
+        action="{{ url_for('clear_bin_form', bin_id=bin.id) }}"
+        method="post"
+        onsubmit="return confirm('Clear all captured requests for this bin?');"
+      >
+        <button type="submit" class="btn btn-danger btn-sm">Clear Logs</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="endpoint-box">
+    <span class="endpoint-label">Webhook Endpoint</span>
+    <code id="hook-url" class="endpoint-url">{{ hook_url }}</code>
+    <button type="button" class="btn btn-secondary btn-sm" data-copy-target="hook-url">Copy URL</button>
+  </div>
+</section>
+
+<details class="card simulator-card" {% if not requests_list %}open{% endif %}>
+  <summary class="simulator-summary">
+    <span>Send Test Request</span>
+    <span class="muted">Simulate GET, POST, PUT, PATCH, or DELETE directly from the UI</span>
+  </summary>
+  <form action="{{ url_for('simulate_webhook', bin_id=bin.id) }}" method="post" class="simulator-form">
+    <div class="simulator-row">
+      <div class="field">
+        <label for="sim-method">Method</label>
+        <select id="sim-method" name="method">
+          <option value="POST" selected>POST</option>
+          <option value="GET">GET</option>
+          <option value="PUT">PUT</option>
+          <option value="PATCH">PATCH</option>
+          <option value="DELETE">DELETE</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="sim-ctype">Content-Type</label>
+        <input id="sim-ctype" name="content_type" type="text" value="application/json">
+      </div>
+      <div class="field">
+        <label for="sim-query">Query String <span class="muted">(optional)</span></label>
+        <input id="sim-query" name="query_string" type="text" placeholder="source=stripe&amp;env=local">
+      </div>
+    </div>
+    <div class="field">
+      <label for="sim-body">Payload Body</label>
+      <textarea id="sim-body" name="body" rows="5">{
+  "event": "invoice.paid",
+  "invoice_id": "inv_1042",
+  "amount_cents": 4900,
+  "currency": "usd"
+}</textarea>
+    </div>
+    <div class="simulator-actions">
+      <button type="submit" class="btn btn-primary">Send Test Payload</button>
+    </div>
+  </form>
+</details>
+
+<section class="card filter-bar">
+  <div class="method-pills" role="navigation" aria-label="Filter by HTTP method">
+    {% for m in filter_methods %}
+      <a
+        href="{{ url_for('bin_detail', bin_id=bin.id, method=m, q=search_query) }}"
+        class="method-pill {% if method_filter == m %}active{% endif %}"
+      >{{ m }}</a>
+    {% endfor %}
+  </div>
+  <form action="{{ url_for('bin_detail', bin_id=bin.id) }}" method="get" class="search-form">
+    <input type="hidden" name="method" value="{{ method_filter }}">
+    <input
+      type="search"
+      name="q"
+      value="{{ search_query }}"
+      placeholder="Search body, headers, query, or path..."
+      aria-label="Search captured requests"
+    >
+    <button type="submit" class="btn btn-secondary btn-sm">Filter</button>
+    {% if search_query or method_filter != 'ALL' %}
+      <a href="{{ url_for('bin_detail', bin_id=bin.id) }}" class="btn btn-ghost btn-sm">Reset</a>
+    {% endif %}
+  </form>
+</section>
+
+<section class="inspector-layout">
+  <aside class="card request-list-pane">
+    <div class="card-header">
+      <h2>Captured Requests</h2>
+      <span class="badge">{{ requests_list|length }}</span>
+    </div>
+    {% if requests_list %}
+      <div class="request-list">
+        {% for req in requests_list %}
+          <a
+            href="{{ url_for('bin_detail', bin_id=bin.id, method=method_filter, q=search_query, selected=req.id) }}"
+            class="request-item {% if selected_request and selected_request.id == req.id %}active{% endif %}"
+          >
+            <div class="request-item-top">
+              <span class="http-badge method-{{ req.method|lower }}">{{ req.method }}</span>
+              <span class="status-pill">{{ req.status_code }}</span>
+              {% if req.is_replay %}
+                <span class="replay-pill">Replay #{{ req.replayed_from_id }}</span>
+              {% endif %}
+            </div>
+            <div class="request-item-path">{{ req.path }}</div>
+            <div class="request-item-time">#{{ req.id }} &middot; {{ req.created_at }}</div>
+          </a>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <p>No matching requests.</p>
+        <p class="muted">Send a test payload above or hit <code>/hook/{{ bin.id }}</code> with curl.</p>
+      </div>
+    {% endif %}
+  </aside>
+
+  <div class="card request-detail-pane">
+    {% if selected_request %}
+      <div class="detail-header">
+        <div class="detail-title">
+          <span class="http-badge method-{{ selected_request.method|lower }}">{{ selected_request.method }}</span>
+          <code class="detail-path">{{ selected_request.path }}</code>
+          <span class="status-pill">HTTP {{ selected_request.status_code }}</span>
+          {% if selected_request.is_replay %}
+            <span class="replay-pill">Replayed from #{{ selected_request.replayed_from_id }}</span>
+          {% endif %}
+        </div>
+        <form
+          action="{{ url_for('replay_request_form', bin_id=bin.id, request_id=selected_request.id) }}"
+          method="post"
+        >
+          <button type="submit" class="btn btn-primary btn-sm">Replay Request</button>
+        </form>
+      </div>
+
+      <div class="detail-meta">
+        <span><strong>Request ID:</strong> #{{ selected_request.id }}</span>
+        <span><strong>Timestamp:</strong> {{ selected_request.created_at }}</span>
+        <span><strong>Content-Type:</strong> {{ selected_request.content_type or 'none' }}</span>
+        <span><strong>Remote Addr:</strong> {{ selected_request.remote_addr or 'local' }}</span>
+      </div>
+
+      <div class="detail-section">
+        <div class="section-head">
+          <h3>Body</h3>
+          {% if selected_request.body %}
+            <button type="button" class="btn btn-ghost btn-sm" data-copy-target="req-body-code">Copy Body</button>
+          {% endif %}
+        </div>
+        {% if selected_request.body %}
+          <pre id="req-body-code" class="code-block"><code>{{ selected_request.formatted_body }}</code></pre>
+        {% else %}
+          <p class="muted empty-inline">Empty request body.</p>
+        {% endif %}
+      </div>
+
+      <div class="detail-section">
+        <h3>Query Parameters</h3>
+        {% if selected_request.query_params %}
+          <table class="kv-table">
+            <thead>
+              <tr><th>Key</th><th>Value</th></tr>
+            </thead>
+            <tbody>
+              {% for k, v in selected_request.query_params.items() %}
+                <tr>
+                  <td><code>{{ k }}</code></td>
+                  <td><code>{{ v }}</code></td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <p class="muted empty-inline">No query parameters.</p>
+        {% endif %}
+      </div>
+
+      <div class="detail-section">
+        <h3>Headers</h3>
+        {% if selected_request.headers %}
+          <table class="kv-table">
+            <thead>
+              <tr><th>Header</th><th>Value</th></tr>
+            </thead>
+            <tbody>
+              {% for k, v in selected_request.headers.items() %}
+                <tr>
+                  <td><code>{{ k }}</code></td>
+                  <td><code>{{ v }}</code></td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <p class="muted empty-inline">No headers recorded.</p>
+        {% endif %}
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <p>Select a request to inspect its headers, query parameters, and payload.</p>
+      </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

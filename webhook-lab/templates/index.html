@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}Webhook Lab — Endpoint Bins{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <div>
+    <h1>Inspect webhooks &amp; HTTP payloads locally.</h1>
+    <p class="subtitle">
+      Create an isolated endpoint bin, send real or simulated requests to
+      <code>/hook/&lt;bin_id&gt;</code>, and inspect headers, query strings, and JSON bodies.
+    </p>
+  </div>
+  <div class="stat-group">
+    <div class="stat-card">
+      <span class="stat-label">Active Bins</span>
+      <strong class="stat-value">{{ bins|length }}</strong>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">Captured Requests</span>
+      <strong class="stat-value">{{ total_requests }}</strong>
+    </div>
+  </div>
+</section>
+
+<div class="dashboard-grid">
+  <section class="card">
+    <div class="card-header">
+      <h2>Create Webhook Bin</h2>
+    </div>
+    {% if error %}
+      <div class="alert alert-error" role="alert">{{ error }}</div>
+    {% endif %}
+    <form action="{{ url_for('create_bin_form') }}" method="post" class="stack-form">
+      <div class="field">
+        <label for="bin-name">Bin Name</label>
+        <input
+          id="bin-name"
+          name="name"
+          type="text"
+          placeholder="e.g. Stripe Billing Events"
+          required
+          maxlength="80"
+        >
+      </div>
+      <div class="field">
+        <label for="bin-desc">Description <span class="muted">(optional)</span></label>
+        <input
+          id="bin-desc"
+          name="description"
+          type="text"
+          placeholder="Testing invoice.paid &amp; checkout webhooks"
+          maxlength="160"
+        >
+      </div>
+      <div class="field">
+        <label for="bin-status">Default Response Status</label>
+        <input
+          id="bin-status"
+          name="default_status_code"
+          type="number"
+          min="100"
+          max="599"
+          value="200"
+        >
+      </div>
+      <button type="submit" class="btn btn-primary">Create Bin</button>
+    </form>
+  </section>
+
+  <section class="card">
+    <div class="card-header">
+      <h2>Your Webhook Bins</h2>
+      <span class="badge">{{ bins|length }}</span>
+    </div>
+    {% if bins %}
+      <div class="bin-list">
+        {% for b in bins %}
+          <article class="bin-row">
+            <div class="bin-row-main">
+              <div class="bin-row-title">
+                <a href="{{ url_for('bin_detail', bin_id=b.id) }}" class="bin-link">{{ b.name }}</a>
+                <span class="code-pill">/hook/{{ b.id }}</span>
+                <span class="status-pill">{{ b.default_status_code }}</span>
+              </div>
+              {% if b.description %}
+                <p class="bin-desc">{{ b.description }}</p>
+              {% endif %}
+              <div class="bin-meta">
+                <span>{{ b.request_count }} request{{ '' if b.request_count == 1 else 's' }}</span>
+                <span>&middot;</span>
+                <span>Created {{ b.created_at }}</span>
+                {% if b.last_request_at %}
+                  <span>&middot;</span>
+                  <span>Last hit {{ b.last_request_at }}</span>
+                {% endif %}
+              </div>
+            </div>
+            <div class="bin-row-actions">
+              <a href="{{ url_for('bin_detail', bin_id=b.id) }}" class="btn btn-secondary btn-sm">Inspect</a>
+              <form
+                action="{{ url_for('delete_bin_form', bin_id=b.id) }}"
+                method="post"
+                onsubmit="return confirm('Delete bin {{ b.name }} and all captured requests?');"
+              >
+                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+              </form>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <p>No webhook bins yet.</p>
+        <p class="muted">Create your first bin on the left to start capturing HTTP requests.</p>
+      </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

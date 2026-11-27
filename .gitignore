@@ -1,0 +1,40 @@
+# Byte-compiled / optimized / cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Test / tooling caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# SQLite databases (local dev data)
+*.sqlite
+*.sqlite3
+db.sqlite3
+
+# Django
+staticfiles/
+*.log
+
+# Environment / secrets
+.env
+.env.*
+
+# Vercel
+.vercel
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

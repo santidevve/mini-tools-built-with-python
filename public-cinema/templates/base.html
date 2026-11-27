@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Public Cinema — Free Legal Public-Domain &amp; CC Movies{% endblock %}</title>
+  <meta name="description" content="Discover, preview, and legally download classic public-domain and Creative Commons feature films from the Internet Archive.">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="{{ url_for('index') }}">
+        <span class="brand-mark" aria-hidden="true">PC</span>
+        <span>Public Cinema</span>
+      </a>
+      <div class="header-meta">
+        <span class="legal-badge" title="Verified Public Domain &amp; Creative Commons films">
+          &#10003; 100% Legal &bull; Public Domain &amp; CC
+        </span>
+        <nav aria-label="Primary navigation">
+          <a class="nav-link" href="{{ url_for('index') }}">Browse Catalog</a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <main class="site-main">
+    <div class="container">
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <span>Public Cinema &mdash; Curated Public-Domain &amp; Creative Commons Cinema</span>
+      <span>Direct MP4 streams &amp; downloads hosted legally by the <a href="https://archive.org" target="_blank" rel="noopener noreferrer">Internet Archive</a>.</span>
+    </div>
+  </footer>
+
+  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</body>
+</html>

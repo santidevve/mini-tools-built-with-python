@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block title %}{{ status_code|default(404) }} — Public Cinema{% endblock %}
+
+{% block content %}
+<section class="error-card" aria-labelledby="error-heading">
+  <div class="error-code">{{ status_code|default(404) }}</div>
+  <h1 id="error-heading">Reel Not Found</h1>
+  <p>{{ message|default("The film or page you requested is not in our archive.") }}</p>
+  <a class="btn btn-primary" href="{{ url_for('index') }}">Back to Catalog</a>
+</section>
+{% endblock %}

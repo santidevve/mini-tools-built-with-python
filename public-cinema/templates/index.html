@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}Public Cinema — Free Legal Public-Domain &amp; CC Movies{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <span class="hero-eyebrow">Curated Archive &bull; Free &amp; Legal</span>
+  <h1 class="hero-title">Classic &amp; Indie Cinema, Free Forever</h1>
+  <p class="hero-subtitle">
+    Stream previews or download full MP4s of verified Public Domain and Creative Commons feature films
+    hosted on the Internet Archive. Filter by mood, genre, era, or runtime.
+  </p>
+</section>
+
+<section class="filter-panel" aria-label="Movie recommendation filters">
+  <form id="filter-form" method="get" action="{{ url_for('index') }}">
+    <div class="filter-grid">
+      <div class="field">
+        <label for="filter-q">Search</label>
+        <input
+          id="filter-q"
+          class="input"
+          type="search"
+          name="q"
+          value="{{ filters.q }}"
+          placeholder="Title, director, keyword..."
+          autocomplete="off"
+        >
+      </div>
+
+      <div class="field">
+        <label for="filter-genre">Genre</label>
+        <select id="filter-genre" class="select" name="genre">
+          <option value="">All Genres</option>
+          {% for genre in genres %}
+            <option value="{{ genre }}" {% if filters.genre == genre %}selected{% endif %}>{{ genre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="filter-mood">Mood</label>
+        <select id="filter-mood" class="select" name="mood">
+          <option value="">All Moods</option>
+          {% for mood in moods %}
+            <option value="{{ mood }}" {% if filters.mood == mood %}selected{% endif %}>{{ mood }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="filter-era">Era</label>
+        <select id="filter-era" class="select" name="era">
+          <option value="">All Eras</option>
+          {% for era in eras %}
+            <option value="{{ era }}" {% if filters.era == era %}selected{% endif %}>{{ era }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="filter-runtime">Max Runtime</label>
+        <select id="filter-runtime" class="select" name="max_runtime">
+          <option value="">Any Length</option>
+          <option value="60" {% if filters.max_runtime == 60 %}selected{% endif %}>Up to 60 min</option>
+          <option value="90" {% if filters.max_runtime == 90 %}selected{% endif %}>Up to 90 min</option>
+          <option value="120" {% if filters.max_runtime == 120 %}selected{% endif %}>Up to 120 min</option>
+          <option value="150" {% if filters.max_runtime == 150 %}selected{% endif %}>Up to 150 min</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="filter-actions">
+      <div class="filter-buttons">
+        <button type="submit" class="btn btn-primary">Apply Filters</button>
+        <a href="{{ url_for('index') }}" class="btn btn-secondary" id="reset-btn">Reset</a>
+        <button type="button" class="btn btn-surprise" id="surprise-btn">&#10024; Surprise Me</button>
+      </div>
+      <div class="results-count" aria-live="polite">
+        Showing <strong id="results-count">{{ movies|length }}</strong> of {{ all_movies_count }} films
+      </div>
+    </div>
+  </form>
+</section>
+
+<section id="movie-grid" class="movie-grid {% if not movies %}hidden{% endif %}" aria-label="Movie catalog">
+  {% for movie in movies %}
+    <article class="movie-card" data-movie-id="{{ movie.id }}">
+      <a class="poster-wrap" href="{{ url_for('movie_detail', movie_id=movie.id) }}">
+        <img
+          class="poster-img"
+          src="{{ movie.poster_url }}"
+          alt="{{ movie.title }} ({{ movie.year }}) poster"
+          loading="lazy"
+          onerror="this.style.display='none'"
+        >
+        <div class="poster-overlay">
+          <span class="pill">{{ movie.year }} &bull; {{ movie.runtime_min }} min</span>
+          <span class="pill pill-license">{{ movie.license }}</span>
+        </div>
+      </a>
+
+      <div class="card-body">
+        <h2 class="card-title">
+          <a href="{{ url_for('movie_detail', movie_id=movie.id) }}">{{ movie.title }}</a>
+        </h2>
+        <p class="card-director">Directed by {{ movie.director }}</p>
+        <p class="card-synopsis">{{ movie.synopsis }}</p>
+
+        <div class="tag-row">
+          {% for genre in movie.genres %}
+            <span class="tag">{{ genre }}</span>
+          {% endfor %}
+          {% for mood in movie.moods %}
+            <span class="tag tag-mood">{{ mood }}</span>
+          {% endfor %}
+        </div>
+
+        <div class="card-actions">
+          <a class="btn btn-secondary btn-sm" href="{{ url_for('movie_detail', movie_id=movie.id) }}">Details</a>
+          <a class="btn btn-primary btn-sm" href="{{ url_for('download_movie', movie_id=movie.id) }}">Download MP4</a>
+        </div>
+      </div>
+    </article>
+  {% endfor %}
+</section>
+
+<section id="empty-state" class="empty-state {% if movies %}hidden{% endif %}">
+  <h2>No matching films found</h2>
+  <p>Try widening your mood, genre, era, or runtime filters to discover more classics.</p>
+  <a class="btn btn-primary" href="{{ url_for('index') }}">Show All Films</a>
+</section>
+{% endblock %}

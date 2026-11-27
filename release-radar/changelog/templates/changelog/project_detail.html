@@ -1,0 +1,209 @@
+{% extends "changelog/base.html" %}
+
+{% block title %}{{ project.name }} — Changelog &amp; Feature Requests | Release Radar{% endblock %}
+
+{% block content %}
+<nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'changelog:project_list' %}">Products</a>
+    <span aria-hidden="true">/</span>
+    <span>{{ project.name }}</span>
+</nav>
+
+<section class="project-hero card">
+    <div class="project-hero-main">
+        <div class="project-title-row">
+            <h1>{{ project.name }}</h1>
+            {% with latest=project.releases.first %}
+                {% if latest %}
+                    <span class="version-pill">Latest {{ latest.version }}</span>
+                {% endif %}
+            {% endwith %}
+        </div>
+        <p class="project-hero-desc">{{ project.description }}</p>
+    </div>
+    <div class="project-hero-links">
+        <a href="{% url 'changelog:api_project_releases' project.slug %}" class="btn btn-ghost">Releases JSON</a>
+        <a href="{% url 'changelog:api_project_features' project.slug %}" class="btn btn-ghost">Features JSON</a>
+    </div>
+</section>
+
+<div class="two-col-layout">
+    <section class="changelog-column" aria-labelledby="changelog-heading">
+        <div class="section-header">
+            <h2 id="changelog-heading">Changelog</h2>
+            <span class="muted">{{ releases|length }} release{{ releases|length|pluralize }}</span>
+        </div>
+
+        <form method="get" action="{{ project.get_absolute_url }}" class="filter-bar">
+            <div class="filter-inputs">
+                <input
+                    type="search"
+                    name="q"
+                    value="{{ query }}"
+                    placeholder="Filter releases by keyword or version..."
+                    aria-label="Filter releases"
+                    class="search-input"
+                >
+                {% if selected_category %}
+                    <input type="hidden" name="category" value="{{ selected_category }}">
+                {% endif %}
+                <button type="submit" class="btn btn-primary">Filter</button>
+                {% if query or selected_category %}
+                    <a href="{{ project.get_absolute_url }}" class="btn btn-ghost">Reset</a>
+                {% endif %}
+            </div>
+
+            <div class="pill-row" role="group" aria-label="Filter by category">
+                <a
+                    href="?{% if query %}q={{ query|urlencode }}{% endif %}"
+                    class="filter-pill {% if not selected_category %}active{% endif %}"
+                >
+                    All
+                </a>
+                {% for value, label in categories %}
+                    <a
+                        href="?category={{ value|urlencode }}{% if query %}&amp;q={{ query|urlencode }}{% endif %}"
+                        class="filter-pill {% if selected_category == value %}active{% endif %}"
+                    >
+                        {{ label }}
+                    </a>
+                {% endfor %}
+            </div>
+        </form>
+
+        {% if releases %}
+            <div class="timeline">
+                {% for release in releases %}
+                    <article class="card timeline-item">
+                        <div class="timeline-header">
+                            <div class="feed-badges">
+                                <span class="badge badge-{{ release.category|lower }}">{{ release.category }}</span>
+                                <span class="version-pill">{{ release.version }}</span>
+                            </div>
+                            <time datetime="{{ release.published_at|date:'c' }}" class="muted">
+                                {{ release.published_at|date:"M j, Y" }}
+                            </time>
+                        </div>
+                        <h3 class="timeline-title">{{ release.title }}</h3>
+                        <p class="timeline-summary">{{ release.summary }}</p>
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <p>No releases match the current filter.</p>
+            </div>
+        {% endif %}
+    </section>
+
+    <aside class="features-column" id="features" aria-labelledby="features-heading">
+        <div class="section-header">
+            <h2 id="features-heading">Feature Requests</h2>
+            <span class="muted">{{ feature_requests|length }} item{{ feature_requests|length|pluralize }}</span>
+        </div>
+
+        <div class="pill-row" role="group" aria-label="Filter feature requests by status">
+            <a
+                href="{{ project.get_absolute_url }}#features"
+                class="filter-pill {% if not selected_status %}active{% endif %}"
+            >
+                All
+            </a>
+            {% for value, label in statuses %}
+                <a
+                    href="?status={{ value|urlencode }}{% if selected_category %}&amp;category={{ selected_category|urlencode }}{% endif %}{% if query %}&amp;q={{ query|urlencode }}{% endif %}#features"
+                    class="filter-pill {% if selected_status == value %}active{% endif %}"
+                >
+                    {{ label }}
+                </a>
+            {% endfor %}
+        </div>
+
+        <div class="feature-list">
+            {% for feature in feature_requests %}
+                <article class="card feature-card">
+                    <form
+                        method="post"
+                        action="{% url 'changelog:upvote_feature' feature.pk %}"
+                        class="upvote-form"
+                        data-upvote-form
+                    >
+                        {% csrf_token %}
+                        <button type="submit" class="upvote-btn" aria-label="Upvote {{ feature.title }}">
+                            <span class="upvote-arrow" aria-hidden="true">&#9650;</span>
+                            <span class="upvote-count" data-vote-count>{{ feature.votes }}</span>
+                        </button>
+                    </form>
+                    <div class="feature-body">
+                        <div class="feature-header">
+                            <h3>{{ feature.title }}</h3>
+                            <span class="status-pill status-{{ feature.status|slugify }}">{{ feature.status }}</span>
+                        </div>
+                        <p class="feature-desc">{{ feature.description }}</p>
+                    </div>
+                </article>
+            {% empty %}
+                <div class="empty-state">
+                    <p>No feature requests yet. Be the first to suggest one!</p>
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="card request-form-card">
+            <h3>Request a Feature</h3>
+            <p class="muted form-hint">Have an idea for {{ project.name }}? Submit it below for the team and community.</p>
+            <form method="post" action="{{ project.get_absolute_url }}#features" class="feature-form">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="{{ form.title.id_for_label }}">{{ form.title.label }}</label>
+                    {{ form.title }}
+                    {% if form.title.errors %}
+                        <div class="field-error">{{ form.title.errors }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.description.id_for_label }}">{{ form.description.label }}</label>
+                    {{ form.description }}
+                    {% if form.description.errors %}
+                        <div class="field-error">{{ form.description.errors }}</div>
+                    {% endif %}
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Submit Request</button>
+            </form>
+        </div>
+    </aside>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.querySelectorAll("[data-upvote-form]").forEach((form) => {
+    form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const countEl = form.querySelector("[data-vote-count]");
+        const csrfInput = form.querySelector("input[name='csrfmiddlewaretoken']");
+        try {
+            const response = await fetch(form.action, {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": csrfInput ? csrfInput.value : "",
+                    "X-Requested-With": "XMLHttpRequest",
+                    "Accept": "application/json",
+                },
+            });
+            if (!response.ok) {
+                form.submit();
+                return;
+            }
+            const data = await response.json();
+            if (countEl && typeof data.votes === "number") {
+                countEl.textContent = data.votes;
+                form.querySelector(".upvote-btn").classList.add("upvoted");
+            }
+        } catch {
+            form.submit();
+        }
+    });
+});
+</script>
+{% endblock %}

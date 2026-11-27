@@ -1,0 +1,47 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Release Radar — Product Changelog & Feature Portal{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'changelog/styles.css' %}">
+</head>
+<body>
+    <header class="site-header">
+        <div class="container header-inner">
+            <a href="{% url 'changelog:project_list' %}" class="brand">
+                <span class="brand-dot" aria-hidden="true"></span>
+                <span>Release Radar</span>
+            </a>
+            <nav class="nav-links" aria-label="Primary">
+                <a href="{% url 'changelog:project_list' %}" class="nav-link">Products</a>
+                <a href="{% url 'admin:index' %}" class="nav-link">Admin</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container main-content">
+        {% if messages %}
+            <div class="messages" role="status" aria-live="polite">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags|default:'info' }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="site-footer">
+        <div class="container footer-inner">
+            <span>Release Radar &middot; Product Changelog &amp; Feature Request Portal</span>
+            <span>Built with Django &amp; SQLite</span>
+        </div>
+    </footer>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>
