@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from flask import Flask, abort, jsonify, redirect, render_template, request
+from flask import Flask, abort, jsonify, redirect, render_template, request, url_for
 
 from catalog import (
     MOVIES,
@@ -14,6 +14,7 @@ from catalog import (
     get_all_moods,
     get_movie_by_id,
     get_sources,
+    add_source,
     is_allowed_archive_url,
     recommend_movies,
 )
@@ -148,13 +149,59 @@ def create_app() -> Flask:
             sources=get_sources(kind=kind),
             all_sources_count=len(get_sources()),
             selected_kind=kind or "",
+            added=request.args.get("added"),
         )
+
+    @flask_app.post("/sources")
+    def add_source_page():
+        tags_raw = request.form.get("tags", "")
+        tags = [t for t in tags_raw.split(",")]
+        try:
+            add_source(
+                name=request.form.get("name"),
+                url=request.form.get("url"),
+                kind=request.form.get("kind"),
+                description=request.form.get("description"),
+                tags=tags,
+            )
+        except ValueError as exc:
+            return (
+                render_template(
+                    "sources.html",
+                    sources=get_sources(),
+                    all_sources_count=len(get_sources()),
+                    selected_kind="",
+                    added=None,
+                    error=str(exc),
+                    form=request.form,
+                ),
+                400,
+            )
+        return redirect(url_for("sources_page", added="1"))
 
     @flask_app.get("/api/sources")
     def api_sources():
         kind = (request.args.get("kind") or "").strip() or None
         items = get_sources(kind=kind)
         return jsonify({"count": len(items), "sources": items})
+
+    @flask_app.post("/api/sources")
+    def api_add_source():
+        data = request.get_json(silent=True) or {}
+        tags = data.get("tags") or []
+        if isinstance(tags, str):
+            tags = [t for t in tags.split(",")]
+        try:
+            source = add_source(
+                name=data.get("name"),
+                url=data.get("url"),
+                kind=data.get("kind"),
+                description=data.get("description"),
+                tags=tags,
+            )
+        except ValueError as exc:
+            return jsonify({"error": str(exc)}), 400
+        return jsonify({"source": source}), 201
 
     @flask_app.errorhandler(404)
     def not_found(_error):

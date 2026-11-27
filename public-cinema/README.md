@@ -20,6 +20,8 @@ and direct download/stream links.
 - **Public-domain source recommendations**: A curated `/sources` page and
   `/api/sources` endpoint recommend reputable libraries (Internet Archive, Prelinger,
   Library of Congress, Blender Open Movies, and more) to find additional free films.
+- **Add your own sources**: Submit new sources via the on-page form (`POST /sources`) or
+  the JSON API (`POST /api/sources`). Additions are kept in memory for the session.
 - **JSON API**: Machine-readable endpoints for the catalog and recommendations.
 - **Server-rendered UI**: Jinja2 templates with vanilla CSS/JS, no build step.
 
@@ -77,9 +79,11 @@ Open `http://127.0.0.1:5000` in your browser.
 | `GET` | `/movie/<movie_id>` | Movie detail page with similar titles |
 | `GET` | `/download/<movie_id>` | Redirect to the allowlisted `archive.org` file (`?stream=1` for inline playback) |
 | `GET` | `/sources` | Curated public-domain & CC film sources (`?kind=` filters by license type) |
+| `POST` | `/sources` | Add a new source via the on-page form (redirects back on success) |
 | `GET` | `/api/movies` | Filtered catalog as JSON (`q`, `genre`, `mood`, `era`, `max_runtime`) |
 | `GET` | `/api/recommend` | Recommendations as JSON (`similar_to`, `limit`, plus filters) |
 | `GET` | `/api/sources` | Recommended free-film sources as JSON (`?kind=` optional filter) |
+| `POST` | `/api/sources` | Add a source via JSON (`name`, `url`, `kind`, `description`, `tags`) → 201 |
 
 ## Examples
 
@@ -93,7 +97,14 @@ curl "http://127.0.0.1:5000/api/recommend?similar_to=nosferatu&limit=4"
 # List recommended public-domain / CC film sources
 curl "http://127.0.0.1:5000/api/sources"
 curl "http://127.0.0.1:5000/api/sources?kind=Creative%20Commons"
+
+# Add a new source (JSON)
+curl -X POST "http://127.0.0.1:5000/api/sources" -H "Content-Type: application/json" \
+  -d '{"name":"My Archive","url":"https://example.org","kind":"Public Domain","tags":["Classics"]}'
 ```
+
+> Note: sources are stored in memory, so sources added at runtime last until the
+> server restarts.
 
 ## Running Tests
 

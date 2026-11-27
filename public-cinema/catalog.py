@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import json
+import re
 import urllib.error
 import urllib.parse
 import urllib.request
 from typing import Any
+from uuid import uuid4
 
 ALLOWED_ARCHIVE_HOSTS = ("archive.org",)
 
@@ -476,6 +478,49 @@ def get_sources(kind: str | None = None) -> list[dict[str, Any]]:
         return list(SOURCES)
     needle = kind.strip().lower()
     return [s for s in SOURCES if needle in s["kind"].lower()]
+
+
+def _slugify(value: str) -> str:
+    """Create a URL-safe slug from a string."""
+    slug = re.sub(r"[^a-z0-9]+", "-", (value or "").lower()).strip("-")
+    return slug or "source"
+
+
+def add_source(
+    name: str | None,
+    url: str | None,
+    kind: str | None = None,
+    description: str | None = None,
+    tags: list[str] | None = None,
+) -> dict[str, Any]:
+    """Validate and append a new source to the in-memory list. Raises ValueError on bad input.
+
+    Note: sources live in memory, so additions last for the lifetime of the process.
+    """
+    clean_name = (name or "").strip()
+    clean_url = (url or "").strip()
+    clean_kind = (kind or "").strip() or "Public Domain"
+    clean_desc = (description or "").strip()
+
+    if not clean_name:
+        raise ValueError("A source name is required.")
+    if not clean_url:
+        raise ValueError("A source URL is required.")
+    if not clean_url.startswith(("http://", "https://")):
+        raise ValueError("The URL must start with http:// or https://.")
+
+    clean_tags = [t.strip() for t in (tags or []) if t and t.strip()]
+
+    source = {
+        "id": f"{_slugify(clean_name)}-{uuid4().hex[:6]}",
+        "name": clean_name,
+        "url": clean_url,
+        "kind": clean_kind,
+        "description": clean_desc,
+        "tags": clean_tags,
+    }
+    SOURCES.append(source)
+    return source
 
 
 def get_movie_by_id(movie_id: str) -> dict[str, Any] | None:

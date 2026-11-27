@@ -38,6 +38,56 @@
   </form>
 </section>
 
+{% if added %}
+<div class="flash flash-success" role="status">New source added. It will remain for this server session.</div>
+{% endif %}
+{% if error %}
+<div class="flash flash-error" role="alert">{{ error }}</div>
+{% endif %}
+
+<details class="add-source-panel">
+  <summary class="add-source-summary">+ Add a new source</summary>
+  <form id="add-source-form" method="post" action="{{ url_for('add_source_page') }}" class="add-source-form">
+    <div class="filter-grid filter-grid-add">
+      <div class="field">
+        <label for="new-name">Name</label>
+        <input id="new-name" class="input" type="text" name="name" required
+               value="{{ form.name if form else '' }}" placeholder="e.g. Criterion Channel">
+      </div>
+      <div class="field">
+        <label for="new-url">URL</label>
+        <input id="new-url" class="input" type="url" name="url" required
+               value="{{ form.url if form else '' }}" placeholder="https://...">
+      </div>
+      <div class="field">
+        <label for="new-kind">License Type</label>
+        <select id="new-kind" class="select" name="kind">
+          <option value="Public Domain" {% if form and form.kind == 'Public Domain' %}selected{% endif %}>Public Domain</option>
+          <option value="Creative Commons" {% if form and form.kind == 'Creative Commons' %}selected{% endif %}>Creative Commons</option>
+          <option value="Mixed" {% if form and form.kind == 'Mixed' %}selected{% endif %}>Mixed</option>
+        </select>
+      </div>
+    </div>
+    <div class="filter-grid filter-grid-add">
+      <div class="field">
+        <label for="new-description">Description</label>
+        <input id="new-description" class="input" type="text" name="description"
+               value="{{ form.description if form else '' }}" placeholder="Short description">
+      </div>
+      <div class="field">
+        <label for="new-tags">Tags (comma separated)</label>
+        <input id="new-tags" class="input" type="text" name="tags"
+               value="{{ form.tags if form else '' }}" placeholder="Classics, Downloads">
+      </div>
+    </div>
+    <div class="filter-actions">
+      <div class="filter-buttons">
+        <button type="submit" class="btn btn-primary">Add Source</button>
+      </div>
+    </div>
+  </form>
+</details>
+
 <section id="sources-grid" class="sources-grid {% if not sources %}hidden{% endif %}" aria-label="Recommended film sources">
   {% for source in sources %}
     <article class="source-card" data-source-id="{{ source.id }}">
