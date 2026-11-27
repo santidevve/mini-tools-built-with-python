@@ -3,6 +3,15 @@
 (function () {
   "use strict";
 
+  // Register the service worker for installable/offline PWA support (Google TV).
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("/sw.js").catch(() => {
+        /* Non-fatal: app still works without offline support. */
+      });
+    });
+  }
+
   function escapeHtml(value) {
     return String(value)
       .replace(/&/g, "&amp;")
@@ -150,4 +159,114 @@
       }
     });
   }
+
+  // ------------------------------------------------------------------
+  // D-pad / remote spatial navigation for Google TV & Android TV.
+  // Arrow keys move focus to the nearest focusable element in that
+  // direction; Enter/Space activate it natively.
+  // ------------------------------------------------------------------
+  const FOCUSABLE_SELECTOR = [
+    "a[href]",
+    "button:not([disabled])",
+    "input:not([disabled])",
+    "select:not([disabled])",
+    "textarea:not([disabled])",
+    "video[controls]",
+    "[tabindex]:not([tabindex='-1'])",
+  ].join(",");
+
+  function getFocusable() {
+    return Array.from(document.querySelectorAll(FOCUSABLE_SELECTOR)).filter((el) => {
+      if (el.closest(".hidden")) return false;
+      if (el.offsetParent === null && el.tagName !== "VIDEO") return false;
+      return true;
+    });
+  }
+
+  function focusFirst() {
+    const items = getFocusable();
+    if (items.length) items[0].focus({ preventScroll: false });
+  }
+
+  function spatialNavigate(key) {
+    const items = getFocusable();
+    if (!items.length) return false;
+    const current = document.activeElement;
+    if (!current || !items.includes(current)) {
+      focusFirst();
+      return true;
+    }
+
+    const from = current.getBoundingClientRect();
+    const fx = from.left + from.width / 2;
+    const fy = from.top + from.height / 2;
+
+    let best = null;
+    let bestScore = Infinity;
+
+    for (const el of items) {
+      if (el === current) continue;
+      const r = el.getBoundingClientRect();
+      const cx = r.left + r.width / 2;
+      const cy = r.top + r.height / 2;
+      const dx = cx - fx;
+      const dy = cy - fy;
+
+      let primary = 0;
+      let secondary = 0;
+      if (key === "ArrowRight") { primary = dx; secondary = Math.abs(dy); }
+      else if (key === "ArrowLeft") { primary = -dx; secondary = Math.abs(dy); }
+      else if (key === "ArrowDown") { primary = dy; secondary = Math.abs(dx); }
+      else if (key === "ArrowUp") { primary = -dy; secondary = Math.abs(dx); }
+
+      if (primary <= 4) continue; // must be in the requested direction
+      const score = primary + secondary * 2.2;
+      if (score < bestScore) {
+        bestScore = score;
+        best = el;
+      }
+    }
+
+    if (best) {
+      best.focus({ preventScroll: false });
+      best.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
+      return true;
+    }
+    return false;
+  }
+
+  const ARROW_KEYS = ["ArrowRight", "ArrowLeft", "ArrowDown", "ArrowUp"];
+  document.addEventListener(
+    "keydown",
+    (event) => {
+      if (event.defaultPrevented) return;
+      const tag = (event.target && event.target.tagName) || "";
+      // Let text inputs keep native caret movement.
+      if (tag === "INPUT" && event.target.type !== "checkbox" && event.target.type !== "radio") {
+        const isTextInput = ["text", "search", "email", "url", "tel", "password", "number"].includes(
+          event.target.type
+        );
+        if (isTextInput) return;
+      }
+      if (ARROW_KEYS.includes(event.key)) {
+        if (spatialNavigate(event.key)) {
+          event.preventDefault();
+        }
+      }
+    },
+    true
+  );
+
+  // Show a focus hint the first time the user navigates with the remote.
+  let tvHintShown = false;
+  document.addEventListener(
+    "keydown",
+    (event) => {
+      if (!tvHintShown && (ARROW_KEYS.includes(event.key) || event.key === "Enter")) {
+        tvHintShown = true;
+        document.body.classList.add("using-remote");
+      }
+    },
+    true
+  );
 })();

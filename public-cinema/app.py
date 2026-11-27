@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from flask import Flask, abort, jsonify, redirect, render_template, request
+from flask import Flask, abort, jsonify, redirect, render_template, request, send_from_directory
 
 from catalog import (
     MOVIES,
@@ -43,6 +43,23 @@ def _extract_filter_params() -> dict[str, Any]:
 def create_app() -> Flask:
     """Application factory for the Public Cinema Flask app."""
     flask_app = Flask(__name__)
+
+    # ------------------------------------------------------------------
+    # PWA plumbing: served from the root so the service worker scope is "/"
+    # and the manifest is discoverable for installable (Google TV) installs.
+    # ------------------------------------------------------------------
+
+    @flask_app.get("/sw.js")
+    def service_worker():
+        return send_from_directory(
+            "static", "sw.js", mimetype="application/javascript"
+        )
+
+    @flask_app.get("/manifest.webmanifest")
+    def web_manifest():
+        return send_from_directory(
+            "static", "manifest.webmanifest", mimetype="application/manifest+json"
+        )
 
     @flask_app.get("/")
     def index():

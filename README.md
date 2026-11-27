@@ -19,7 +19,8 @@ python-portfolio-apps/
 ├── .gitignore           # shared Python/editor/venv ignores
 ├── public-cinema/       # Flask movie recommender
 ├── release-radar/       # Django changelog portal
-└── webhook-lab/         # Flask webhook inspector
+├── webhook-lab/         # Flask webhook inspector
+└── android/             # Android WebView APK wrapper for public-cinema
 ```
 
 Each app directory is a standalone project. There is no shared package, shared
@@ -90,6 +91,13 @@ All three apps include Vercel ignore files (`.vercelignore`) and are structured 
 run on Vercel's Python runtime. `release-radar` and `webhook-lab` detect the
 `VERCEL` environment variable and fall back to a writable `/tmp` SQLite database,
 since the serverless filesystem is read-only. See each app's README for details.
+
+## Android APK (Google TV / Android TV)
+
+`public-cinema` can be packaged as an Android APK via the WebView wrapper in
+[`android/`](./android). Set `START_URL` in `android/gradle.properties` to the hosted app,
+then run `android/build_apk.ps1` (auto-installs JDK/Gradle/Android SDK and builds a debug
+APK). See [`android/README.md`](./android/README.md) for details.
 
 ## License
 

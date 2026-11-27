@@ -694,6 +694,74 @@ img {
   margin: 0.25rem 0 0.4rem;
 }
 
+/* Google TV / Android TV (10-foot UI + D-pad) */
+:root {
+  --tv-focus: #facc15;
+  --tv-focus-soft: rgba(250, 204, 21, 0.35);
+}
+
+/* Respect TV safe areas / overscan so nothing is clipped at the edges. */
+.site-header,
+.site-main,
+.site-footer {
+  padding-left: max(1.25rem, env(safe-area-inset-left));
+  padding-right: max(1.25rem, env(safe-area-inset-right));
+}
+
+.site-main {
+  padding-top: max(2rem, env(safe-area-inset-top));
+  padding-bottom: max(4rem, env(safe-area-inset-bottom));
+}
+
+/* Strong, always-visible focus ring for remote navigation. */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+video:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid var(--tv-focus);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
+}
+
+/* When navigating with the remote, enlarge the focused card for a 10-foot view. */
+.using-remote .movie-card:focus-within,
+.using-remote .source-card:focus-within {
+  transform: translateY(-4px) scale(1.03);
+  border-color: var(--tv-focus);
+  box-shadow: 0 0 0 3px var(--tv-focus-soft), var(--shadow-card);
+  z-index: 2;
+}
+
+.using-remote .btn:focus-visible,
+.using-remote .nav-link:focus-visible {
+  transform: translateY(-1px) scale(1.04);
+}
+
+/* Make the whole card a single, obvious focus target on TV. */
+.movie-card:focus-within .card-title a,
+.source-card:focus-within .source-title {
+  color: var(--tv-focus);
+}
+
+/* Slightly larger, more legible base sizing for the 10-foot experience. */
+@media (min-width: 1600px) {
+  :root {
+    --container-max: 1500px;
+  }
+
+  .hero-subtitle {
+    font-size: 1.12rem;
+  }
+
+  .card-synopsis,
+  .source-description {
+    font-size: 0.96rem;
+  }
+}
+
 /* Responsive */
 @media (max-width: 980px) {
   .filter-grid {
