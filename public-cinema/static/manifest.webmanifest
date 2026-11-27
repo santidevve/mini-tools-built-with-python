@@ -1,0 +1,36 @@
+{
+  "name": "Public Cinema — Free Public-Domain & CC Movies",
+  "short_name": "Public Cinema",
+  "description": "Discover, preview, and legally download public-domain and Creative Commons feature films.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["fullscreen", "standalone", "minimal-ui"],
+  "orientation": "landscape",
+  "background_color": "#0a0c10",
+  "theme_color": "#0a0c10",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["entertainment", "video"],
+  "icons": [
+    {
+      "src": "/static/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

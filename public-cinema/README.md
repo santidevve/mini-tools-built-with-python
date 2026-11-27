@@ -101,6 +101,31 @@ curl "http://127.0.0.1:5000/api/sources?kind=Creative%20Commons"
 pytest -v
 ```
 
+## Google TV / Android TV
+
+The app is an installable **Progressive Web App (PWA)** with a TV-friendly "10-foot"
+UI, so it runs and installs on Google TV / Android TV without a rewrite:
+
+- **Installable**: a web manifest, app icons, and a service worker (`/sw.js`, root
+  scope) enable "Install app" in Chrome on Android TV / Google TV. The same PWA can be
+  wrapped into a native APK later with a Trusted Web Activity (Bubblewrap / Android
+  Studio) — no code changes required.
+- **D-pad ready**: arrow keys move focus spatially between controls, Enter/Space
+  activate, and focused cards enlarge with a high-contrast gold ring.
+- **TV layout**: landscape orientation, safe-area/overscan padding, and larger text on
+  big screens.
+
+### Install on Google TV
+
+1. Serve the app over **HTTPS** (required for service workers / install) — e.g. deploy
+   to Vercel, or expose your local dev server with a tunnel.
+2. Open the app URL in Chrome on the Google TV device.
+3. Open the Chrome menu (⋮) → **Install app** / **Add to Home screen**.
+4. Launch it from the TV home screen; navigate with the D-pad.
+
+For local testing on a TV, `python app.py` plus an HTTPS tunnel to port 5000 is enough
+(the manifest and service worker are served automatically).
+
 ## Deployment
 
 The app includes a `.vercelignore` and runs on Vercel's Python runtime. The catalog
