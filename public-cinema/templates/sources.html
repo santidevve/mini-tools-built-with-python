@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Public-Domain &amp; CC Film Sources — Public Cinema{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <span class="hero-eyebrow">Keep Exploring &bull; Free &amp; Legal</span>
+  <h1 class="hero-title">Where to Find More Public-Domain Films</h1>
+  <p class="hero-subtitle">
+    Our catalog is just a curated slice of what's out there. These hand-picked, reputable
+    sources let you discover thousands more public-domain and Creative Commons films —
+    all free to watch, download, and reuse.
+  </p>
+</section>
+
+<section class="filter-panel" aria-label="Filter sources by license type">
+  <form id="source-filter-form" method="get" action="{{ url_for('sources_page') }}">
+    <div class="filter-grid filter-grid-sources">
+      <div class="field">
+        <label for="source-kind">License Type</label>
+        <select id="source-kind" class="select" name="kind">
+          <option value="">All Sources</option>
+          <option value="Public Domain" {% if selected_kind == 'Public Domain' %}selected{% endif %}>Public Domain</option>
+          <option value="Creative Commons" {% if selected_kind == 'Creative Commons' %}selected{% endif %}>Creative Commons</option>
+          <option value="Mixed" {% if selected_kind == 'Mixed' %}selected{% endif %}>Mixed</option>
+        </select>
+      </div>
+    </div>
+    <div class="filter-actions">
+      <div class="filter-buttons">
+        <button type="submit" class="btn btn-primary">Apply Filter</button>
+        <a href="{{ url_for('sources_page') }}" class="btn btn-secondary">Reset</a>
+      </div>
+      <div class="results-count" aria-live="polite">
+        Showing <strong id="sources-count">{{ sources|length }}</strong> of {{ all_sources_count }} sources
+      </div>
+    </div>
+  </form>
+</section>
+
+<section id="sources-grid" class="sources-grid {% if not sources %}hidden{% endif %}" aria-label="Recommended film sources">
+  {% for source in sources %}
+    <article class="source-card" data-source-id="{{ source.id }}">
+      <div class="source-head">
+        <span class="pill pill-license">{{ source.kind }}</span>
+      </div>
+      <h2 class="source-title">{{ source.name }}</h2>
+      <p class="source-description">{{ source.description }}</p>
+      <div class="tag-row">
+        {% for tag in source.tags %}
+          <span class="tag">{{ tag }}</span>
+        {% endfor %}
+      </div>
+      <div class="card-actions">
+        <a class="btn btn-primary btn-sm" href="{{ source.url }}" target="_blank" rel="noopener noreferrer">
+          Visit Source &#8599;
+        </a>
+      </div>
+    </article>
+  {% endfor %}
+</section>
+
+<section id="sources-empty" class="empty-state {% if sources %}hidden{% endif %}">
+  <h2>No sources match that filter</h2>
+  <p>Try a different license type to see more public-domain and Creative Commons archives.</p>
+  <a class="btn btn-primary" href="{{ url_for('sources_page') }}">Show All Sources</a>
+</section>
+{% endblock %}

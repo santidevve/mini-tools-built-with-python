@@ -373,6 +373,110 @@ MOVIES: list[dict[str, Any]] = [
 
 _MOVIE_INDEX: dict[str, dict[str, Any]] = {m["id"]: m for m in MOVIES}
 
+# Curated, reputable sources to discover more public-domain & Creative Commons films.
+# Each entry is a hand-verified, legal destination external to this app.
+SOURCES: list[dict[str, Any]] = [
+    {
+        "id": "internet-archive",
+        "name": "Internet Archive — Feature Films",
+        "url": "https://archive.org/details/feature_films",
+        "kind": "Public Domain & Creative Commons",
+        "description": (
+            "The largest free library on the web. Its Feature Films collection streams "
+            "and downloads thousands of public-domain and openly licensed titles, and is "
+            "the same source that powers this catalog."
+        ),
+        "tags": ["Huge catalog", "Stream & download", "API access"],
+    },
+    {
+        "id": "prelinger-archives",
+        "name": "Prelinger Archives",
+        "url": "https://archive.org/details/prelinger",
+        "kind": "Public Domain",
+        "description": (
+            "A rich collection of ephemeral, educational, industrial, and amateur films "
+            "spanning 1927–1987, held by the Library of Congress and hosted on the "
+            "Internet Archive. Great for documentaries and historical footage."
+        ),
+        "tags": ["Documentary", "Historical", "Ephemeral"],
+    },
+    {
+        "id": "library-of-congress",
+        "name": "Library of Congress — National Screening Room",
+        "url": "https://www.loc.gov/collections/national-screening-room/",
+        "kind": "Public Domain",
+        "description": (
+            "The U.S. national library's free streaming room of historically and "
+            "culturally significant motion pictures that are in the public domain."
+        ),
+        "tags": ["Archive", "Historically significant", "Stream"],
+    },
+    {
+        "id": "blender-open-movies",
+        "name": "Blender Open Movies",
+        "url": "https://studio.blender.org/films/",
+        "kind": "Creative Commons",
+        "description": (
+            "High-quality open animated short films (Big Buck Bunny, Sita Sings the "
+            "Blues, Elephants Dream, and more) produced by the Blender Foundation under "
+            "Creative Commons licenses."
+        ),
+        "tags": ["Animation", "Open source", "Shorts"],
+    },
+    {
+        "id": "public-domain-movies",
+        "name": "Public Domain Movies",
+        "url": "https://www.publicdomainmovies.net/",
+        "kind": "Public Domain",
+        "description": (
+            "A long-running directory of classic public-domain feature films and serials, "
+            "with direct downloads and streaming links for offline viewing."
+        ),
+        "tags": ["Classics", "Downloads", "Serials"],
+    },
+    {
+        "id": "open-culture",
+        "name": "Open Culture — Free Movies",
+        "url": "https://www.openculture.com/free-movies",
+        "kind": "Mixed (Public Domain & CC)",
+        "description": (
+            "A curated index of free movies, documentaries, and film collections from "
+            "around the web, linking to legal public-domain and Creative Commons sources."
+        ),
+        "tags": ["Curated index", "Documentaries", "Mixed"],
+    },
+    {
+        "id": "wikimedia-commons",
+        "name": "Wikimedia Commons — Video",
+        "url": "https://commons.wikimedia.org/wiki/Category:Video",
+        "kind": "Creative Commons & Public Domain",
+        "description": (
+            "A free media repository with freely licensed and public-domain video files, "
+            "including historical and documentary footage reusable with attribution."
+        ),
+        "tags": ["Free media", "Reusable", "Attribution"],
+    },
+    {
+        "id": "national-film-board",
+        "name": "National Film Board of Canada",
+        "url": "https://www.nfb.ca/",
+        "kind": "Creative Commons (selected)",
+        "description": (
+            "Iconic Canadian documentaries and animation. A large catalog streams free; "
+            "a subset is offered under Creative Commons licenses for reuse."
+        ),
+        "tags": ["Documentary", "Animation", "Canadian"],
+    },
+]
+
+
+def get_sources(kind: str | None = None) -> list[dict[str, Any]]:
+    """Return curated public-domain/CC film sources, optionally filtered by kind substring."""
+    if not kind or not kind.strip():
+        return list(SOURCES)
+    needle = kind.strip().lower()
+    return [s for s in SOURCES if needle in s["kind"].lower()]
+
 
 def get_movie_by_id(movie_id: str) -> dict[str, Any] | None:
     """Return a single movie dict by its slug ID, or None if not found."""

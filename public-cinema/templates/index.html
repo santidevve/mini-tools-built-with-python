@@ -130,4 +130,16 @@
   <p>Try widening your mood, genre, era, or runtime filters to discover more classics.</p>
   <a class="btn btn-primary" href="{{ url_for('index') }}">Show All Films</a>
 </section>
+
+<section class="sources-cta" aria-labelledby="sources-cta-heading">
+  <div class="sources-cta-text">
+    <span class="hero-eyebrow">Keep Exploring</span>
+    <h2 id="sources-cta-heading" class="section-heading">Looking for more free films?</h2>
+    <p class="hero-subtitle">
+      Browse our hand-picked list of trusted public-domain and Creative Commons archives
+      to find thousands more movies you can legally watch and download.
+    </p>
+  </div>
+  <a class="btn btn-surprise" href="{{ url_for('sources_page') }}">Explore Film Sources &#8599;</a>
+</section>
 {% endblock %}

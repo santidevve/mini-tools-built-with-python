@@ -17,6 +17,9 @@ and direct download/stream links.
   mood, and era overlap (`/api/recommend?similar_to=...`).
 - **Safe downloads**: Download/stream redirects are validated against an
   allowlist of `archive.org` hosts to prevent open redirects.
+- **Public-domain source recommendations**: A curated `/sources` page and
+  `/api/sources` endpoint recommend reputable libraries (Internet Archive, Prelinger,
+  Library of Congress, Blender Open Movies, and more) to find additional free films.
 - **JSON API**: Machine-readable endpoints for the catalog and recommendations.
 - **Server-rendered UI**: Jinja2 templates with vanilla CSS/JS, no build step.
 
@@ -73,8 +76,10 @@ Open `http://127.0.0.1:5000` in your browser.
 | `GET` | `/` | Home page with catalog, filters, and a featured film |
 | `GET` | `/movie/<movie_id>` | Movie detail page with similar titles |
 | `GET` | `/download/<movie_id>` | Redirect to the allowlisted `archive.org` file (`?stream=1` for inline playback) |
+| `GET` | `/sources` | Curated public-domain & CC film sources (`?kind=` filters by license type) |
 | `GET` | `/api/movies` | Filtered catalog as JSON (`q`, `genre`, `mood`, `era`, `max_runtime`) |
 | `GET` | `/api/recommend` | Recommendations as JSON (`similar_to`, `limit`, plus filters) |
+| `GET` | `/api/sources` | Recommended free-film sources as JSON (`?kind=` optional filter) |
 
 ## Examples
 
@@ -84,6 +89,10 @@ curl "http://127.0.0.1:5000/api/movies?genre=Horror&max_runtime=90"
 
 # Recommend films similar to a given ID
 curl "http://127.0.0.1:5000/api/recommend?similar_to=nosferatu&limit=4"
+
+# List recommended public-domain / CC film sources
+curl "http://127.0.0.1:5000/api/sources"
+curl "http://127.0.0.1:5000/api/sources?kind=Creative%20Commons"
 ```
 
 ## Running Tests
