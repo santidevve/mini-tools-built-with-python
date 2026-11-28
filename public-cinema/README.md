@@ -13,6 +13,8 @@ and direct download/stream links.
   `archive.org` download, poster, and detail URLs.
 - **Multi-facet filtering**: Filter by free-text query, genre, mood, era, and
   maximum runtime.
+- **Voice search (free)**: A microphone button in the search box transcribes your
+  voice using the browser's built-in Web Speech API — no API keys, accounts, or cost.
 - **Similarity recommendations**: Get "more like this" suggestions scored by genre,
   mood, and era overlap (`/api/recommend?similar_to=...`).
 - **Safe downloads**: Download/stream redirects are validated against an

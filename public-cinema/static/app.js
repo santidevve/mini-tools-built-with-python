@@ -150,4 +150,50 @@
       }
     });
   }
+
+  // Voice search (free, uses the browser Web Speech API — no API keys or cost).
+  const micBtn = document.getElementById("mic-btn");
+  const searchInput = document.getElementById("filter-q");
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  if (micBtn && searchInput && SpeechRecognition) {
+    micBtn.hidden = false;
+    let recognizing = false;
+
+    const stopListening = () => {
+      recognizing = false;
+      micBtn.classList.remove("listening");
+    };
+
+    micBtn.addEventListener("click", () => {
+      if (recognizing) return;
+      const recognition = new SpeechRecognition();
+      recognition.lang = navigator.language || "en-US";
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      recognition.addEventListener("start", () => {
+        recognizing = true;
+        micBtn.classList.add("listening");
+      });
+
+      recognition.addEventListener("result", (event) => {
+        const transcript = event.results[0][0].transcript.trim();
+        if (!transcript) return;
+        searchInput.value = transcript;
+        searchInput.dispatchEvent(new Event("input", { bubbles: true }));
+      });
+
+      recognition.addEventListener("error", stopListening);
+      recognition.addEventListener("end", stopListening);
+
+      try {
+        recognition.start();
+      } catch (_err) {
+        stopListening();
+      }
+    });
+  } else if (micBtn) {
+    micBtn.hidden = true;
+  }
 })();

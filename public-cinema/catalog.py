@@ -76,7 +76,7 @@ def _build_movie(
         "synopsis": synopsis,
         "license": license_name,
         "archive_id": archive_id,
-        "download_url": f"https://archive.org/download/{archive_id}/{mp4_filename}",
+        "download_url": f"https://archive.org/download/{archive_id}/{urllib.parse.quote(mp4_filename)}",
         "poster_url": f"https://archive.org/services/img/{archive_id}",
         "archive_url": f"https://archive.org/details/{archive_id}",
     }
@@ -96,8 +96,8 @@ MOVIES: list[dict[str, Any]] = [
             "farmhouse as the dead inexplicably rise and besiege the living."
         ),
         license_name="Public Domain",
-        archive_id="night_of_the_living_dead",
-        mp4_filename="night_of_the_living_dead_512kb.mp4",
+        archive_id="night-of-the-living-dead-1968-hd",
+        mp4_filename="Night Of The Living Dead (1968) [HD].mp4",
     ),
     _build_movie(
         movie_id="nosferatu",
@@ -369,7 +369,7 @@ MOVIES: list[dict[str, Any]] = [
         ),
         license_name="CC BY 2.5 (Creative Commons)",
         archive_id="ElephantsDream",
-        mp4_filename="ElephantsDream_512kb.mp4",
+        mp4_filename="ed_1024_512kb.mp4",
     ),
 ]
 
