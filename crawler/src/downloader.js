@@ -23,10 +23,12 @@ export function drawBar(loaded, total, width = 28) {
 }
 
 function safeName(id) {
-  return String(id).replace(/[^a-z0-9._-]+/gi, "_").slice(0, 120) || "movie";
+  return String(id).replace(/[^a-z0-9._-]+/gi, "_").slice(0, 120) || "book";
 }
 
-export async function downloadFromUrl(url, target, timeout, signal, onProgress) {
+const EXT = { epub: "epub", txt: "txt", pdf: "pdf", html: "html" };
+
+export async function downloadFromUrl(url, target, timeout, signal, onProgress, allowHtml = false) {
   await mkdir(path.dirname(target), { recursive: true });
   const idle = new AbortController();
   let idleTimer = setTimeout(() => idle.abort(new Error("idle timeout")), IDLE_TIMEOUT);
@@ -40,8 +42,8 @@ export async function downloadFromUrl(url, target, timeout, signal, onProgress) 
     const resp = await fetch(url, { redirect: "follow", signal: anySignal });
     if (!resp.ok || !resp.body) throw new Error(`HTTP ${resp.status}`);
     const contentType = resp.headers.get("content-type") || "";
-    if (/text\/html/i.test(contentType)) {
-      throw new Error("Resolved URL returned HTML, not a media file");
+    if (!allowHtml && /text\/html/i.test(contentType)) {
+      throw new Error("Resolved URL returned HTML, not a book file");
     }
 
     const total = Number(resp.headers.get("content-length") || 0);
@@ -79,16 +81,16 @@ export async function downloadFromUrl(url, target, timeout, signal, onProgress) 
   }
 }
 
-export async function downloadMovie(context, page, base, movie, outDir, timeout, signal, onProgress) {
+export async function downloadBook(context, page, base, book, outDir, timeout, signal, onProgress) {
   const url =
-    movie.url && /^https?:/i.test(movie.url)
-      ? movie.url
-      : `${base}/download/${encodeURIComponent(movie.id)}`;
-  const target = path.join(outDir, `${safeName(movie.id)}.mp4`);
+    book.url && /^https?:/i.test(book.url)
+      ? book.url
+      : `${base}/download/${encodeURIComponent(book.id)}`;
+  const ext = EXT[book.format] || "bin";
+  const target = path.join(outDir, `${safeName(book.id)}.${ext}`);
   await mkdir(outDir, { recursive: true });
 
-  // For API-style sources, prefer the browser download event when a page is available.
-  if (page && !movie.url) {
+  if (page && !book.url) {
     try {
       const [download] = await Promise.all([
         page.waitForEvent("download", { timeout: Math.min(timeout, 8000) }),
@@ -102,5 +104,5 @@ export async function downloadMovie(context, page, base, movie, outDir, timeout,
     }
   }
 
-  return downloadFromUrl(url, target, timeout, signal, onProgress);
+  return downloadFromUrl(url, target, timeout, signal, onProgress, book.format === "html");
 }

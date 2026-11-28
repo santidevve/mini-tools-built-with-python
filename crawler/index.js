@@ -21,7 +21,7 @@ function parseArgs(argv) {
 
 const args = parseArgs(process.argv.slice(2));
 const base = args.base || config.base;
-const goal = args.goal || "Download a few classic public-domain films";
+const goal = args.goal || "Descarga libros abiertos de dominio público";
 const limit = args.limit ? Number(args.limit) : config.defaultLimit;
 const ids = args.ids
   ? String(args.ids).split(",").map((s) => s.trim()).filter(Boolean)

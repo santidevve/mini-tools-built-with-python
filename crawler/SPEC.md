@@ -1,7 +1,7 @@
-# Especificación — Sistema de GUI + Agente IA para buscar y descargar películas
+# Especificación — Sistema de GUI + Agente IA para buscar y descargar libros abiertos
 
-> Estado: Borrador de especificación (v1)
-> Alcance: producto de escritorio/web con interfaz gráfica donde el usuario pide, en lenguaje natural, que un agente IA navegue la web (Catálogo Public Cinema + fuentes de dominio público/CC), localice una película concreta y la descargue.
+> Estado: Borrador de especificación (v2 — dominio: libros abiertos)
+> Alcance: producto de escritorio/web con interfaz gráfica donde el usuario pide, en lenguaje natural, que un agente IA navegue por fuentes de libros abiertos (Internet Archive, Open Library, Project Gutenberg, Wikisource), localice un libro concreto y lo descargue (EPUB/TXT).
 
 ---
 
@@ -75,7 +75,7 @@ Historias de usuario (muestra):
 
 | ID | Capacidad | Descripción |
 | :-- | :-- | :-- |
-| IA-1 | **Comprensión de la petición** | Extrae intención, título, año, director, duración, idioma, licencia y restricciones desde lenguaje natural (Groq, salida JSON). |
+| IA-1 | **Comprensión de la petición** | Extrae intención, título, autor, año, idioma, formato, licencia y restricciones desde lenguaje natural (Groq, salida JSON). |
 | IA-2 | **Planificador de navegación** | Decide la secuencia de acciones del navegador (ir a fuente, buscar, filtrar, abrir detalle) y la replanifica si falla. |
 | IA-3 | **Verificador de identidad** | Compara candidatos (título, año, duración, metadatos) y puntúa la coincidencia; resuelve "¿es esta? ". |
 | IA-4 | **Resolución de ambigüedad** | Genera preguntas de aclaración cuando hay múltiples versiones (p. ej. 1968 vs 1990). |
@@ -138,7 +138,7 @@ flowchart LR
 
 ## 7. Modelo de datos (entidades)
 
-- **Movie**: `id, title, year, director, duration_min, genres[], license, source, url, poster_url, quality`.
+- **Book**: `id, title, author, year, language, format, license, source, url, cover_url, formats[]`.
 - **Source**: `id, name, base_url, allowed, kind(PublicDomain|CC|Mixed), selectors_version`.
 - **Job**: `id, query_raw, criteria(json), status, progress, file_path, error, created_at`.
 - **Candidate**: `job_id, movie_id, score, reasons(json), chosen`.

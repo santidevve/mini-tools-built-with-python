@@ -132,7 +132,7 @@ button.mic { padding: 10px 12px; }
 .chips, .chips .chip { display: flex; gap: 6px; flex-wrap: wrap; }
 .chip { font-size: 12px; padding: 3px 8px; background: var(--panel-2); border: 1px solid var(--border); border-radius: 999px; color: var(--muted); }
 
-.shot { width: 100%; border-radius: 8px; border: 1px solid var(--border); margin: 8px 0; }
+.cover { width: 100%; border-radius: 8px; border: 1px solid var(--border); margin: 8px 0; }
 
 .candidates { display: flex; flex-direction: column; gap: 8px; }
 .cand { background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 10px; }

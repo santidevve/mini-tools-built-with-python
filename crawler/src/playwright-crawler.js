@@ -1,14 +1,14 @@
 import { chromium } from "playwright";
-import { mkdir } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { AIAgent } from "./agent.js";
-import { downloadMovie } from "./downloader.js";
+import { downloadBook } from "./downloader.js";
+import { search as sourceSearch } from "./sources/index.js";
 
-export async function fetchMovies(base) {
-  const res = await fetch(`${base}/api/movies`);
-  if (!res.ok) throw new Error(`Catalog fetch failed: ${res.status}`);
-  const data = await res.json();
-  return data.movies || [];
+export async function fetchBooks(base, query) {
+  // Online-first: adaptador JSON por fuente. Si no hay adaptador, lanza para que
+  // el pipeline caiga al scraper Playwright genérico.
+  return sourceSearch(base, query);
 }
 
 export function allowedHosts(sources) {
@@ -32,17 +32,24 @@ export function isUrlAllowed(url, sources) {
   }
 }
 
-export async function screenshotMovie(base, movie, destPath) {
+export async function captureCover(book, destPath) {
+  try {
+    if (book.cover_url && /^https?:/i.test(book.cover_url)) {
+      await mkdir(path.dirname(destPath), { recursive: true });
+      const res = await fetch(book.cover_url, { signal: AbortSignal.timeout(15000) });
+      if (res.ok) {
+        await writeFile(destPath, Buffer.from(await res.arrayBuffer()));
+        return destPath;
+      }
+    }
+  } catch {
+    /* fall through to screenshot */
+  }
   const browser = await chromium.launch({ headless: true });
   try {
     const page = await browser.newPage();
-    const url = movie.url && /^https?:/i.test(movie.url) ? movie.url : `${base}/movie/${encodeURIComponent(movie.id)}`;
-    await page
-      .goto(url, {
-        waitUntil: "domcontentloaded",
-        timeout: 30000,
-      })
-      .catch(() => {});
+    const url = book.url && /^https?:/i.test(book.url) ? book.url : book.source;
+    await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30000 }).catch(() => {});
     await mkdir(path.dirname(destPath), { recursive: true });
     await page.screenshot({ path: destPath, fullPage: false });
     return destPath;
@@ -54,35 +61,35 @@ export async function screenshotMovie(base, movie, destPath) {
 }
 
 export async function run({ base, outDir, goal, limit, ids, headless, timeout, signal }) {
-  const movies = await fetchMovies(base);
+  const books = await fetchBooks(base, goal);
 
   let selected;
   if (ids && ids.length) {
     const wanted = new Set(ids);
-    selected = movies.filter((m) => wanted.has(m.id));
+    selected = books.filter((b) => wanted.has(b.id));
   } else {
     const agent = new AIAgent();
-    const chosen = await agent.plan(goal, movies);
+    const chosen = await agent.plan(goal, books);
     const chosenSet = new Set(chosen);
-    selected = movies.filter((m) => chosenSet.has(m.id));
+    selected = books.filter((b) => chosenSet.has(b.id));
     if (limit) selected = selected.slice(0, limit);
   }
 
-  console.log(`Selected ${selected.length} movie(s) to download.`);
+  console.log(`Selected ${selected.length} book(s) to download.`);
 
   const browser = await chromium.launch({ headless });
   const context = await browser.newContext({ acceptDownloads: true });
   const page = await context.newPage();
 
   const results = [];
-  for (const movie of selected) {
+  for (const book of selected) {
     try {
-      const file = await downloadMovie(context, page, base, movie, outDir, timeout, signal);
-      results.push({ id: movie.id, ok: true, file });
-      console.log(`[ok] ${movie.id} -> ${file}`);
+      const file = await downloadBook(context, page, base, book, outDir, timeout, signal);
+      results.push({ id: book.id, ok: true, file });
+      console.log(`[ok] ${book.id} -> ${file}`);
     } catch (err) {
-      results.push({ id: movie.id, ok: false, error: String(err) });
-      console.error(`[fail] ${movie.id}: ${err}`);
+      results.push({ id: book.id, ok: false, error: String(err) });
+      console.error(`[fail] ${book.id}: ${err}`);
     }
   }
 

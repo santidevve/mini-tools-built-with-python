@@ -7,8 +7,9 @@ const dataDir = path.join(here, "..", "data");
 const stateFile = path.join(dataDir, "state.json");
 
 const DEFAULT_SOURCES = [
-  { id: "archive.org", name: "Internet Archive", base_url: "https://archive.org", allowed: true, kind: "Public Domain & CC" },
-  { id: "public-cinema", name: "Public Cinema (local)", base_url: "http://127.0.0.1:5000", allowed: true, kind: "Curated" },
+  { id: "archive", name: "Internet Archive", base_url: "https://archive.org", allowed: true, kind: "Public Domain" },
+  { id: "openlibrary", name: "Open Library", base_url: "https://openlibrary.org", allowed: true, kind: "Open" },
+  { id: "gutendex", name: "Project Gutenberg", base_url: "https://gutendex.com", allowed: true, kind: "Public Domain" },
 ];
 
 function blank() {

@@ -89,10 +89,11 @@ export async function scrapeMovies(base, query, { timeout = 30000 } = {}) {
     return items.map((it) => ({
       id: `scrape-${hash(it.href)}`,
       title: it.title,
+      author: null,
       year: it.year,
-      runtime_min: null,
+      language: null,
+      format: null,
       license: "Unknown (user source)",
-      director: null,
       url: absUrl(base, it.href),
     }));
   } finally {
@@ -100,7 +101,7 @@ export async function scrapeMovies(base, query, { timeout = 30000 } = {}) {
   }
 }
 
-const MEDIA_RE = /\.(mp4|mkv|webm|m4v|avi|mov)(\?|#|$)/i;
+const MEDIA_RE = /\.(mp4|mkv|webm|m4v|avi|mov|epub|txt|pdf|html?)(\?|#|$)/i;
 
 export function isMediaUrl(url) {
   return MEDIA_RE.test(String(url || ""));
@@ -117,14 +118,16 @@ export async function resolveDownloadUrl(url, { timeout = 30000 } = {}) {
     await page.goto(url, { waitUntil: "domcontentloaded", timeout }).catch(() => {});
     await page.waitForTimeout(2000);
     const found = await page.evaluate(() => {
-      const MEDIA = /\.(mp4|mkv|webm|m4v|avi|mov)(\?|#|$)/i;
+      const MEDIA = /\.(mp4|mkv|webm|m4v|avi|mov|epub|txt|pdf|html?)(\?|#|$)/i;
+      const isDownload = (href) =>
+        MEDIA.test(href) || /\/download\//i.test(href) || /\/epub(\/|$)/i.test(href) || /\/pdf(\/|$)/i.test(href);
       const AD_HOST = /adfractal|doubleclick|googlesyndication|ads?\.[a-z]|\/ads?\//i;
       const anchors = Array.from(document.querySelectorAll("a[href]")).filter((a) => !AD_HOST.test(a.href));
-      const media = anchors.find((a) => MEDIA.test(a.href));
+      const media = anchors.find((a) => isDownload(a.href));
       if (media) return media.href;
       const dl = anchors.find(
         (a) =>
-          /download|descargar|fast download|download now/i.test((a.textContent || "").trim()) &&
+          /download|descargar|epub|pdf|read online|leer|fast download|download now/i.test((a.textContent || "").trim()) &&
           !/how[- ]?to[- ]?download|download[- ]?help|how.*download/i.test(a.href + " " + (a.textContent || ""))
       );
       if (dl && dl.href) return dl.href;

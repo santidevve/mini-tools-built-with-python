@@ -37,7 +37,7 @@ app.get("/api/health", (_req, res) => {
 app.post("/jobs", (req, res) => {
   const { query, voice } = req.body || {};
   if (!query || !String(query).trim()) {
-    return res.status(400).json({ error: "A movie request is required." });
+    return res.status(400).json({ error: "A book request is required." });
   }
   const job = manager.createJob({ query, voice });
   res.status(201).json(manager.publicJob(job));
@@ -97,7 +97,7 @@ app.delete("/sources/:id", (req, res) => {
 app.get("/settings", (_req, res) => res.json(manager.store.getSettings()));
 app.put("/settings", (req, res) => res.json(manager.updateSettings(req.body || {})));
 
-app.use("/screenshots", express.static(SHOTS_DIR));
+app.use("/covers", express.static(SHOTS_DIR));
 app.use(express.static(GUI_DIST));
 
 const server = createServer(app);

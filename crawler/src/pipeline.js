@@ -1,10 +1,12 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { stat } from "node:fs/promises";
 import { Store } from "./store.js";
 import { AIAgent } from "./agent.js";
-import { fetchMovies, screenshotMovie, isUrlAllowed } from "./playwright-crawler.js";
+import { fetchBooks, captureCover, isUrlAllowed } from "./playwright-crawler.js";
 import { scrapeMovies, resolveDownloadUrl, isMediaUrl } from "./scraper.js";
-import { downloadMovie } from "./downloader.js";
+import { resolve as resolveSource, detect as detectSource } from "./sources/index.js";
+import { downloadBook } from "./downloader.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const OUT_DIR = path.resolve(here, "..", "downloads");
@@ -66,7 +68,7 @@ export class Manager {
       criteria: null,
       candidates: [],
       chosen: null,
-      screenshot: null,
+      cover: null,
       file_path: null,
       bytes: 0,
       error: null,
@@ -93,7 +95,7 @@ export class Manager {
       criteria: job.criteria,
       candidates: job.candidates,
       chosen: job.chosen,
-      screenshot: job.screenshot,
+      cover: job.cover,
       file_path: job.file_path,
       bytes: job.bytes,
       error: job.error,
@@ -152,20 +154,25 @@ export class Manager {
     const merged = [];
     for (const base of bases) {
       if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
-      let movies;
+      let books;
       try {
-        movies = await fetchMovies(base);
-        this.store.addEvent(job.id, "observation", { base, fetched: movies.length, via: "api" });
-      } catch {
+        books = await fetchBooks(base, job.query_raw);
+        this.store.addEvent(job.id, "observation", { base, fetched: books.length, via: "api" });
+      } catch (err) {
+        // Fuente con adaptador que falla (p. ej. caída/red): no se scrapea, se salta.
+        if (detectSource(base)) {
+          this.store.addEvent(job.id, "observation", { base, error: String(err?.message || err), via: "api" });
+          continue;
+        }
         try {
-          movies = await scrapeMovies(base, job.query_raw);
-          this.store.addEvent(job.id, "observation", { base, fetched: movies.length, via: "playwright" });
-        } catch (err) {
-          this.store.addEvent(job.id, "observation", { base, error: String(err?.message || err) });
+          books = await scrapeMovies(base, job.query_raw);
+          this.store.addEvent(job.id, "observation", { base, fetched: books.length, via: "playwright" });
+        } catch (e) {
+          this.store.addEvent(job.id, "observation", { base, error: String(e?.message || e) });
           continue;
         }
       }
-      const ranked = await this.agent.rank(job.query_raw, movies, criteria);
+      const ranked = await this.agent.rank(job.query_raw, books, criteria);
       for (const m of ranked) merged.push({ ...m, source: base });
     }
 
@@ -182,10 +189,11 @@ export class Manager {
       .map((m) => ({
         id: m.id,
         title: m.title,
+        author: m.author || null,
         year: m.year,
-        runtime_min: m.runtime_min,
+        language: m.language || null,
+        format: m.format || null,
         license: m.license,
-        director: m.director,
         score: m.score,
         reasons: m.reasons,
         source: m.source,
@@ -225,38 +233,45 @@ export class Manager {
     this.store.addEvent(job.id, "decision", { chosen: chosen.id });
     this.touch(job);
 
-    // Si el candidato es una página (scraper), resolver el enlace de descarga real.
-    let dlMovie = chosen;
+    // Resolver el enlace de descarga real (adaptador JSON o fallback Playwright).
+    let dlBook = chosen;
     if (chosen.url && !isMediaUrl(chosen.url)) {
-      const resolved = await resolveDownloadUrl(chosen.url).catch(() => null);
-      if (!resolved) {
+      let resolved = await resolveSource(chosen.source || base, chosen).catch(() => null);
+      if (resolved && !isMediaUrl(resolved)) {
+        const scraped = await resolveDownloadUrl(resolved).catch(() => null);
+        if (scraped) resolved = scraped;
+      } else if (!resolved) {
+        const scraped = await resolveDownloadUrl(chosen.url).catch(() => null);
+        if (scraped) resolved = scraped;
+      }
+      if (!resolved || !isMediaUrl(resolved)) {
         job.status = "error";
         job.error = "No se pudo resolver el enlace de descarga en la fuente.";
         this.store.addEvent(job.id, "decision", { error: job.error, url: chosen.url });
         this.touch(job);
         return;
       }
-      dlMovie = { ...chosen, url: resolved };
+      dlBook = { ...chosen, url: resolved, format: chosen.format || guessFormat(resolved) };
       this.store.addEvent(job.id, "action", { resolved });
       this.touch(job);
     }
 
-    const shotUrl = chosen.url || `${base}/download/${chosen.id}`;
-    if (isUrlAllowed(shotUrl, this.store.getSources())) {
+    const coverUrl = chosen.url || chosen.source;
+    if (isUrlAllowed(coverUrl, this.store.getSources())) {
       try {
-        const shot = await screenshotMovie(base, chosen, path.join(SHOTS_DIR, job.id, "detail.png"));
-        if (shot) {
-          job.screenshot = `/screenshots/${job.id}/detail.png`;
-          this.store.addEvent(job.id, "action", { screenshot: job.screenshot });
+        const cover = await captureCover(chosen, path.join(SHOTS_DIR, job.id, "detail.png"));
+        if (cover) {
+          job.cover = `/covers/${job.id}/detail.png`;
+          this.store.addEvent(job.id, "action", { cover: job.cover });
           this.touch(job);
         }
       } catch {
-        /* screenshots are best-effort */
+        /* covers are best-effort */
       }
     }
 
     const started = Date.now();
-    const file = await downloadMovie(null, null, base, dlMovie, OUT_DIR, this.store.getSettings().idleTimeout || 60000, signal, (loaded, total) => {
+    const file = await downloadBook(null, null, base, dlBook, OUT_DIR, this.store.getSettings().idleTimeout || 60000, signal, (loaded, total) => {
       const pct = total ? clamp(Math.floor((loaded / total) * 100), 0, 100) : 0;
       const secs = Math.max(0.001, (Date.now() - started) / 1000);
       const speed = loaded / secs;
@@ -271,6 +286,7 @@ export class Manager {
     job.status = "done";
     job.progress = 100;
     job.file_path = file;
+    job.bytes = await stat(file).then((s) => s.size).catch(() => 0);
     this.store.addEvent(job.id, "decision", { file, done: true });
     this.touch(job);
     this.broadcast("job.done", { id: job.id, file, chosen: job.chosen });
@@ -366,4 +382,9 @@ export class Manager {
 
 function signalIsAbort(err) {
   return err?.name === "AbortError" || err?.message === "This operation was aborted";
+}
+
+function guessFormat(url) {
+  const m = String(url).match(/\.(epub|txt|pdf|html?)(?:\?|#|$)/i);
+  return m ? m[1].toLowerCase() : null;
 }

@@ -3,7 +3,7 @@
   "version": "1.1.0",
   "private": true,
   "type": "module",
-  "description": "Local web GUI + AI agent (Groq) that browses with Playwright and downloads public-domain/CC movies.",
+  "description": "Local web GUI + AI agent (Groq) that browses with Playwright and downloads open/public-domain books (EPUB/TXT).",
   "scripts": {
     "start": "node index.js",
     "server": "node src/server.js",

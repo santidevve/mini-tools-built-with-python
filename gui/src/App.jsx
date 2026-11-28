@@ -38,7 +38,7 @@ async function api(path, opts) {
 }
 
 export default function App() {
-  const [tab, setTab] = useState("downloads");
+  const [tab, setTab] = useState("books");
   const [jobs, setJobs] = useState([]);
   const [settings, setSettings] = useState({});
   const [sources, setSources] = useState([]);
@@ -96,18 +96,18 @@ export default function App() {
   }, [refresh]);
 
   useEffect(() => {
-    if (localStorage.getItem("cine-tour-done")) return;
+    if (localStorage.getItem("books-tour-done")) return;
     const t = setTimeout(() => {
       const d = driver({
         showProgress: true,
         steps: [
-          { element: "#request-panel", popover: { title: "Pide una película", description: "Escribe o dicta lo que quieres. El agente IA la busca y la descarga." } },
+          { element: "#request-panel", popover: { title: "Pide un libro", description: "Escribe o dicta lo que quieres. El agente IA lo busca en fuentes abiertas y lo descarga." } },
           { element: "#queue-panel", popover: { title: "Cola de descargas", description: "Sigue el progreso, pausa, reanuda o cancela cada trabajo." } },
-          { element: "#detail-panel", popover: { title: "Detalle y candidatos", description: "Revisa el trace del agente y elige la versión correcta si hay dudas." } },
+          { element: "#detail-panel", popover: { title: "Detalle y candidatos", description: "Revisa el trace del agente y elige el libro correcto si hay dudas." } },
         ],
       });
       d.drive();
-      localStorage.setItem("cine-tour-done", "1");
+      localStorage.setItem("books-tour-done", "1");
     }, 600);
     return () => clearTimeout(t);
   }, []);
@@ -139,7 +139,7 @@ export default function App() {
   return (
     <div className="app">
       <header className="topbar">
-        <h1>🎬 CineDownloader</h1>
+        <h1>📚 OpenBooks</h1>
         <div className="health">
           {health ? (
             <span className={health.ai ? "pill ok" : "pill warn"}>
@@ -151,7 +151,7 @@ export default function App() {
         </div>
         <nav className="tabs">
           {[
-            ["downloads", "Descargas"],
+            ["books", "Libros"],
             ["history", "Historial"],
             ["sources", "Fuentes"],
             ["settings", "Ajustes"],
@@ -163,14 +163,14 @@ export default function App() {
         </nav>
       </header>
 
-      {tab === "downloads" && (
+      {tab === "books" && (
         <main className="grid">
           <section className="col">
             <div id="request-panel" className="card request">
               <div className="row">
                 <input
                   className="text"
-                  placeholder="Ej: Busca Metropolis de 1927 y descárgala"
+                  placeholder="Ej: Busca Moby Dick de Herman Melville"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && submit()}
@@ -186,7 +186,7 @@ export default function App() {
 
             <div id="queue-panel" className="card">
               <h2>Cola</h2>
-              {jobs.length === 0 && <p className="muted">Aún no hay trabajos. Pide una película arriba.</p>}
+              {jobs.length === 0 && <p className="muted">Aún no hay trabajos. Pide un libro arriba.</p>}
               <ul className="job-list">
                 {jobs.map((j) => (
                   <li key={j.id} className={"job " + j.status + (activeJob?.id === j.id ? " sel" : "")} onClick={() => setSelected(j.id)}>
@@ -261,12 +261,14 @@ function Detail({ job, onChoose }) {
       {job.criteria && (
         <div className="chips">
           {job.criteria.title && <span className="chip">Título: {job.criteria.title}</span>}
+          {job.criteria.author && <span className="chip">Autor: {job.criteria.author}</span>}
           {job.criteria.year && <span className="chip">Año: {job.criteria.year}</span>}
-          {job.criteria.duration_min && <span className="chip">≤ {job.criteria.duration_min} min</span>}
+          {job.criteria.language && <span className="chip">Idioma: {job.criteria.language}</span>}
+          {job.criteria.format && <span className="chip">Formato: {job.criteria.format}</span>}
         </div>
       )}
 
-      {job.screenshot && <img className="shot" src={job.screenshot} alt="Captura del navegador" />}
+      {job.cover && <img className="cover" src={job.cover} alt="Portada del libro" />}
 
       {job.status === "needs_input" && job.candidates.length > 0 && (
         <div className="candidates">
@@ -274,14 +276,13 @@ function Detail({ job, onChoose }) {
           {job.candidates.map((c) => (
             <div key={c.id} className="cand">
               <div>
-                <strong>{c.title}</strong> {c.year && `(${c.year})`} · {c.runtime_min || "?"} min
+                <strong>{c.title}</strong> {c.year ? `(${c.year})` : ""} {c.author ? `· ${c.author}` : ""}
               </div>
               <div className="muted">
-                {c.license} · score {c.score}
-                {c.source ? ` · ${c.source}` : ""}
+                {[c.language, c.format, c.license, `score ${c.score}`, c.source].filter(Boolean).join(" · ")}
               </div>
               <button className="primary" onClick={() => onChoose(c.id)}>
-                Elegir esta
+                Elegir este
               </button>
             </div>
           ))}
