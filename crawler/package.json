@@ -1,0 +1,19 @@
+{
+  "name": "public-cinema-crawler",
+  "version": "1.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local web GUI + AI agent (Groq) that browses with Playwright and downloads public-domain/CC movies.",
+  "scripts": {
+    "start": "node index.js",
+    "server": "node src/server.js",
+    "build-gui": "npm --prefix ../gui run build",
+    "app": "npm run build-gui && node src/server.js",
+    "install-browser": "playwright install chromium"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "playwright": "^1.49.1",
+    "ws": "^8.18.0"
+  }
+}
